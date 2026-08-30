@@ -10,7 +10,9 @@ RSS_URL = "https://www.ynet.co.il/Integration/StoryRss1854.xml"
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"}
-    requests.post(url, json=payload)
+    response = requests.post(url, json=payload)
+    print("Telegram Response Status:", response.status_code)
+    print("Telegram Response Body:", response.text)
 
 def main():
     feed = feedparser.parse(RSS_URL)
