@@ -6,13 +6,11 @@ import requests
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# הטקסט הקבוע שייופיע בסוף כל כתבה עם קישור לחיץ
-FOOTER_TEXT = '\n\nאהבתם? שתפו: <a href="https://t.me/ilchannel12">חדשות 24/7</a>'
-
-RSS_URLS = [
-    "https://mako.co.il/rss/news-mako-news.xml",
-    "https://www.israelhayom.co.il/rss.xml",
-    "https://www.ynet.co.il/Integration/StoryRss1854.xml"
+# מילוי רשימת הפידים עם שמות המקורות
+RSS_FEEDS = [
+    {"source": "Mako", "url": "https://mako.co.il/rss/news-mako-news.xml"},
+    {"source": "ישראל היום", "url": "https://www.israelhayom.co.il/rss.xml"},
+    {"source": "Ynet", "url": "https://www.ynet.co.il/Integration/StoryRss1854.xml"}
 ]
 
 SENT_ARTICLES_FILE = "sent_articles.json"
@@ -46,18 +44,29 @@ def main():
     sent_articles = load_sent_articles()
     new_sent_count = 0
 
-    for url in RSS_URLS:
-        feed = feedparser.parse(url)
+    for item in RSS_FEEDS:
+        source_name = item["source"]
+        feed_url = item["url"]
+        
+        feed = feedparser.parse(feed_url)
         if feed.entries:
+            # מעבר על 5 הכתבות האחרונות בפיד
             for entry in reversed(feed.entries[:5]):
                 article_id = entry.get("id") or entry.get("link")
                 if article_id not in sent_articles:
-                    title = entry.title
-                    link = entry.link
+                    title = entry.title.strip()
+                    link = entry.link.strip()
                     
-                    message = f"<b>{title}</b>\n\n{link}{FOOTER_TEXT}"
+                    # בניית הודעה מעוצבת
+                    message = (
+                        f"🔴 <b>מבזק חדשות | {source_name}</b>\n\n"
+                        f"<b>{title}</b>\n\n"
+                        f"🔗 <a href=\"{link}\">לקריאת הכתבה המלאה לחצו כאן</a>\n\n"
+                        f"──────────────────\n"
+                        f"📢 <b>חדשות 24/7</b> | <a href=\"https://t.me/ilchannel12\">הצטרפו לערוץ ושארפו</a>"
+                    )
+                    
                     send_telegram_message(message)
-                    
                     sent_articles.add(article_id)
                     new_sent_count += 1
 
